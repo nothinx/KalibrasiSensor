@@ -20,7 +20,7 @@ float persen = baterai.ubah(volt);
 - **Di luar rentang**: dibatasi ke titik ujung (default) atau diteruskan dengan ekstrapolasi.
 - **Kalibrasi dua titik** untuk sensor linear: cukup tabel 2 titik dan `aturEkstrapolasi(true)`.
 - **Tabel di flash (PROGMEM)** di AVR: tabel 10 titik menghemat 80 byte RAM Uno.
-- **Tabel tidak disalin**. Objek hanya 8 byte di Uno, dan isi tabel boleh diubah saat berjalan (mis. hasil kalibrasi yang disimpan di EEPROM), cukup panggil `mulai()` lagi.
+- **Tabel tidak disalin**. Objek hanya 6 byte di Uno, dan isi tabel boleh diubah saat berjalan (mis. hasil kalibrasi yang disimpan di EEPROM), cukup panggil `mulai()` lagi.
 
 ## Board yang didukung
 
@@ -87,6 +87,28 @@ Grafik dibuat dari simulasi di PC yang menjalankan kode library ini (`extras/sim
 cd extras/simulasi
 python gambar.py   # butuh g++ dan matplotlib
 ```
+
+## Kecepatan & memori
+
+Diukur dengan simavr (simulator ATmega328P yang akurat per siklus) di Arduino Uno 16 MHz. Masukan bergilir di seluruh rentang tabel agar semua ruas terkena. Pembanding: MultiMap 0.4.0 (`multiMap<float>`, `multiMapBS<float>`) dan InterpolationLib 1.0.2 (`Interpolation::Linear`, `double` = `float` di Uno).
+
+| `ubah()` | KalibrasiSensor 1.0.1 | KalibrasiSensor 1.0.0 | MultiMap 0.4.0 | InterpolationLib 1.0.2 |
+|---|---|---|---|---|
+| 2 titik (linear) | 1.566 siklus (98 µs) | 2.097 (131 µs) | 1.516 (95 µs) | - |
+| 8 titik (baterai Li-ion) | 2.023 (126 µs) | 3.311 (207 µs) | 1.917 (120 µs) | 1.990 (124 µs) |
+| 8 titik, tabel `PROGMEM` | 2.067 (129 µs) | 3.371 (211 µs) | tidak bisa | tidak bisa |
+| 32 titik | 2.208 (138 µs) | 5.913 (370 µs) | 2.884 (180 µs); `multiMapBS` 1.817 | 2.730 (171 µs) |
+| RAM per objek | 6 B | 8 B | 0 (fungsi) | 0 (fungsi) |
+| Flash tambahan (8 titik) | 1.842 B | 1.778 B | 1.488 B | 1.398 B |
+
+`ubah()` O(log n) waktu (binary search ruas) dan O(1) memori; `mulai()` O(n). Optimasi di 1.0.1, dengan hasil sama persis seperti 1.0.0 (diuji di `extras/test` untuk tabel 2–40 titik, naik/turun, dengan dan tanpa ekstrapolasi):
+- Arah tabel (naik/turun) disimpan sekali di `mulai()`, jadi pencarian tidak lagi mengalikan setiap titik dengan ±1. Perkalian float di AVR ±130 siklus, pembanding jauh lebih murah.
+- Pencarian ruas memakai binary search: 32 titik 2,7× lebih cepat.
+- Status disimpan sebagai bit, objek turun dari 8 ke 6 byte.
+
+Di mana kita kalah: untuk tabel kecil MultiMap dan InterpolationLib ±50–100 siklus lebih cepat dan ±350–450 byte lebih kecil di flash. Selisih itu untuk memeriksa tabel (urut, tidak kembar, `NAN`), mendukung tabel turun, `PROGMEM`, dan ekstrapolasi. `multiMapBS` 18% lebih cepat di 32 titik karena tidak memeriksa apa pun dan hanya untuk tabel naik.
+
+Di ESP32 dan STM32 `src/` bebas promosi `float` → `double` (`-Wdouble-promotion`). Mengulang pengukuran: sketch `extras/benchmark/KalibrasiSensorBenchmark` (butuh simavr).
 
 ## Kalibrasi dua titik
 
@@ -169,7 +191,7 @@ g++ -std=c++11 -I. -I../../src uji.cpp ../../src/*.cpp -o uji && ./uji
 
 ## Status
 
-Versi 1.0.0 sudah lolos uji logika otomatis di PC dan compile tanpa warning di Uno, ESP32, dan STM32 Bluepill (CI menguji 7 board). Jalur `DI_FLASH` di AVR baru teruji compile, belum dijalankan di board sungguhan. Jika menemukan masalah, silakan buka *issue* di GitHub.
+Versi 1.0.1 sudah lolos uji logika otomatis di PC dan compile tanpa warning di Uno, ESP32, dan STM32 Bluepill (CI menguji 7 board). Jalur `DI_FLASH` sudah dijalankan di simulator ATmega328P (simavr) dengan hasil sama dengan tabel di RAM, tapi belum di board sungguhan. Jika menemukan masalah, silakan buka *issue* di GitHub.
 
 ## Lisensi
 

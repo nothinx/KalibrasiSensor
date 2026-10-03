@@ -31,7 +31,7 @@ void loop() {
 - Out-of-range input is clamped (default) or extrapolated.
 - Two-point calibration is just a 2-point table plus `aturEkstrapolasi(true)`.
 - Tables can live in flash on AVR (`PROGMEM` + `DI_FLASH`): a 10-point table saves 80 bytes of Uno RAM.
-- Accepts `const` tables. The table is not copied, so the object is 8 bytes on Uno.
+- Accepts `const` tables. The table is not copied, so the object is 6 bytes on Uno.
 
 ## Simulation results
 
@@ -49,6 +49,20 @@ The descending table is used as is. Outside the table (grey) the result is clamp
 
 For comparison, `multiMap()` from MultiMap 0.4.0 (copied from its source into the simulation) with the same table: 10 cm for every voltage up to 2.30 V, 80 cm above. Regenerate with `cd extras/simulasi && python gambar.py` (needs g++ and matplotlib).
 
+## Speed & memory
+
+Measured with simavr (cycle-accurate ATmega328P simulator), Arduino Uno 16 MHz, inputs spread over the whole table.
+
+| `ubah()` | KalibrasiSensor 1.0.1 | 1.0.0 | MultiMap 0.4.0 | InterpolationLib 1.0.2 |
+|---|---|---|---|---|
+| 2 points | 1,566 cycles (98 µs) | 2,097 | 1,516 | - |
+| 8 points | 2,023 (126 µs) | 3,311 | 1,917 | 1,990 |
+| 8 points, `PROGMEM` | 2,067 (129 µs) | 3,371 | not supported | not supported |
+| 32 points | 2,208 (138 µs) | 5,913 | 2,884; `multiMapBS` 1,817 | 2,730 |
+| RAM per object | 6 B | 8 B | 0 | 0 |
+
+`ubah()` is O(log n) (binary search). Since 1.0.1 the table direction is stored once (no multiply by ±1 per point) and the object shrank from 8 to 6 bytes; results are bit-identical to 1.0.0. For small tables MultiMap and InterpolationLib are ~50–100 cycles faster and ~400 B smaller in flash because they skip table validation, descending tables, `PROGMEM`, and extrapolation. Benchmark sketch: `extras/benchmark/KalibrasiSensorBenchmark`.
+
 ## Function reference
 
 | Indonesian | English | Notes |
@@ -65,7 +79,7 @@ For comparison, `multiMap()` from MultiMap 0.4.0 (copied from its source into th
 
 ## Status
 
-Version 1.0.0 passes automated logic tests on PC and compiles without warnings on Uno, ESP32, and STM32 Bluepill (CI covers 7 boards). The AVR `DI_FLASH` path has only been compile-tested, **not run on real hardware**.
+Version 1.0.1 passes automated logic tests on PC and compiles without warnings on Uno, ESP32, and STM32 Bluepill (CI covers 7 boards). The AVR `DI_FLASH` path has been run in an ATmega328P simulator (simavr) with results identical to a RAM table, but **not on real hardware**.
 
 ## License
 
