@@ -65,6 +65,29 @@ void loop() {
 }
 ```
 
+## Hasil simulasi
+
+Grafik di bawah adalah **simulasi di PC** yang memanggil `ubah()` dengan tabel dari contoh `PersenBaterai` dan `SharpIRJarak`, bukan pengukuran sensor sungguhan. Kurva baterai adalah perkiraan dari tabel komunitas, bukan datasheet sel tertentu.
+
+![Persen baterai Li-ion dari tabel kalibrasi dibanding pemetaan linear 3,0 sampai 4,2 volt](extras/gambar/baterai.svg)
+
+Pemetaan linear seperti `map()` menganggap 3,70 V masih 58%, padahal menurut kurva tabel baterai tinggal 12,5%. Sebagian besar kapasitas ada di 3,7–4,0 V, jadi baterai "linear" terlihat penuh lalu tiba-tiba habis.
+
+![Jarak Sharp IR dari tegangan dengan tabel turun, dibatasi dan diekstrapolasi di luar rentang tabel](extras/gambar/sharp-ir.svg)
+
+Tabel turun (tegangan makin kecil saat jarak makin jauh) dipakai apa adanya. Di luar rentang tabel (area abu-abu), hasil dibatasi ke titik ujung secara default. Dengan `aturEkstrapolasi(true)` garis ruas terakhir diteruskan, yang untuk Sharp IR cepat menjadi tidak masuk akal.
+
+![multiMap dengan tabel turun menghasilkan 10 cm untuk hampir semua tegangan](extras/gambar/multimap-tabel-turun.svg)
+
+Pembanding: fungsi `multiMap()` dari library MultiMap 0.4.0 (disalin dari source-nya ke program simulasi) dengan tabel Sharp IR yang sama. Karena mengira tabel selalu naik, hasilnya 10 cm untuk semua tegangan sampai 2,30 V dan 80 cm di atasnya.
+
+Grafik dibuat dari simulasi di PC yang menjalankan kode library ini (`extras/simulasi`):
+
+```sh
+cd extras/simulasi
+python gambar.py   # butuh g++ dan matplotlib
+```
+
 ## Kalibrasi dua titik
 
 Untuk sensor linear (sensor tekanan, sensor arus, load cell lewat ADC, pembagi tegangan), ukur bacaan mentah di dua keadaan yang nilai nyatanya diketahui:

@@ -33,6 +33,22 @@ void loop() {
 - Tables can live in flash on AVR (`PROGMEM` + `DI_FLASH`): a 10-point table saves 80 bytes of Uno RAM.
 - Accepts `const` tables. The table is not copied, so the object is 8 bytes on Uno.
 
+## Simulation results
+
+PC simulation calling `ubah()` with the tables from the `PersenBaterai` and `SharpIRJarak` examples (not a hardware measurement; the battery curve is an approximate community table).
+
+![Li-ion percentage from the calibration table versus a linear 3.0 to 4.2 volt mapping](extras/gambar/baterai.svg)
+
+A linear `map()` reports 58% at 3.70 V; the table curve says 12.5%.
+
+![Sharp IR distance from a descending table, clamped and extrapolated outside the table](extras/gambar/sharp-ir.svg)
+
+The descending table is used as is. Outside the table (grey) the result is clamped by default, or extrapolated with `aturEkstrapolasi(true)`.
+
+![multiMap with a descending table returns 10 cm for almost every voltage](extras/gambar/multimap-tabel-turun.svg)
+
+For comparison, `multiMap()` from MultiMap 0.4.0 (copied from its source into the simulation) with the same table: 10 cm for every voltage up to 2.30 V, 80 cm above. Regenerate with `cd extras/simulasi && python gambar.py` (needs g++ and matplotlib).
+
 ## Function reference
 
 | Indonesian | English | Notes |
