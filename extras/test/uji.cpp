@@ -96,6 +96,37 @@ int main() {
     assert(dekat(k.ubah(300), 600));
     kasus++;
   }
+  { // binary search = pencarian linear apa adanya, tabel 2..40 titik tidak merata, naik dan turun
+    static float m[40], n[40];
+    for (int jumlah = 2; jumlah <= 40; jumlah++)
+      for (int turun = 0; turun < 2; turun++)
+        for (int ekstra = 0; ekstra < 2; ekstra++) {
+          for (int i = 0; i < jumlah; i++) {
+            float p = i * 3 + (i * i % 7) * 0.25f; // naik, jarak tidak sama
+            m[i] = turun ? -p : p;
+            n[i] = sinf(i * 0.7f) * 100;
+          }
+          KalibrasiSensor k(m, n, jumlah);
+          k.aturEkstrapolasi(ekstra);
+          assert(k.valid());
+          for (int i = 0; i < jumlah; i++) assert(k.ubah(m[i]) == n[i]);
+          float lo = turun ? m[jumlah - 1] : m[0], hi = turun ? m[0] : m[jumlah - 1];
+          for (float x = lo - 10; x <= hi + 10; x += 0.37f) {
+            // Acuan: cari ruas linear lalu interpolasi, sama dengan versi 1.0.0.
+            float a = turun ? -1.f : 1.f, xs = x * a, harap;
+            if (!ekstra && xs <= m[0] * a) harap = n[0];
+            else if (!ekstra && xs >= m[jumlah - 1] * a) harap = n[jumlah - 1];
+            else {
+              int i = 0;
+              while (i + 1 < jumlah - 1 && xs > m[i + 1] * a) i++;
+              float t = (x - m[i]) / (m[i + 1] - m[i]);
+              harap = n[i] * (1 - t) + n[i + 1] * t;
+            }
+            assert(k.ubah(x) == harap);
+          }
+        }
+    kasus++;
+  }
   printf("Semua uji lolos (%d kasus, sizeof = %u byte)\n", kasus, (unsigned)sizeof(KalibrasiSensor));
   return 0;
 }

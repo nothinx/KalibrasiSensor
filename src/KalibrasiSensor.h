@@ -20,7 +20,8 @@ public:
   // mentah[] dan nyata[] berisi jumlah titik, berpasangan. Tabel tidak disalin,
   // jadi harus tetap ada (global atau static).
   KalibrasiSensor(const float *mentah, const float *nyata, uint8_t jumlah, Lokasi lokasi = DI_RAM)
-      : _mentah(mentah), _nyata(nyata), _jumlah(jumlah), _flash(lokasi == DI_FLASH) { mulai(); }
+      : _mentah(mentah), _nyata(nyata), _jumlah(jumlah), _flash(lokasi == DI_FLASH), _valid(false),
+        _ekstrapolasi(false), _naik(false) { mulai(); }
 
   // Periksa tabel. false jika titik < 2 atau mentah[] tidak urut naik/turun
   // (ada nilai kembar). Sudah dipanggil oleh constructor; panggil lagi
@@ -41,7 +42,8 @@ private:
   const float *_mentah;
   const float *_nyata;
   uint8_t _jumlah;
-  bool _flash;
-  bool _valid = false;
-  bool _ekstrapolasi = false;
+  bool _flash : 1;
+  bool _valid : 1;
+  bool _ekstrapolasi : 1;
+  bool _naik : 1; // arah tabel mentah, diisi mulai()
 };
