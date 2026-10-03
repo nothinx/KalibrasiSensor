@@ -1,0 +1,13 @@
+#######################################
+# KalibrasiSensor
+#######################################
+
+KalibrasiSensor	KEYWORD1
+
+mulai	KEYWORD2
+valid	KEYWORD2
+ubah	KEYWORD2
+aturEkstrapolasi	KEYWORD2
+
+DI_RAM	LITERAL1
+DI_FLASH	LITERAL1
